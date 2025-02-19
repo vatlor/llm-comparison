@@ -4,11 +4,11 @@ import { useState } from "react"
 import { ChatInterface } from "../components/chat-interface"
 import type { ModelInfo, Message, ChatState } from "../lib/types"
 
-// Static list of models
+
 const staticModels: ModelInfo[] = [
   {
-    provider: "GitHub Copilot",
-    model: "gpt-3.5-turbo",
+    provider: "claude-3.5-sonnet",
+    model: "claude-3.5-sonnet",
     description: "A large language model optimized for dialogue.",
     context: "4,096 tokens",
     inputPricing: "N/A",
@@ -16,8 +16,8 @@ const staticModels: ModelInfo[] = [
     icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/screen.PNG-VV9pqhPHwQzkhNOxEzacb0LwWlSJjx.png",
   },
   {
-    provider: "GitHub Copilot",
-    model: "gpt-4",
+    provider: "gemini-2.0-flash",
+    model: "gemini-2.0-flash",
     description: "The latest GPT-4 model with improved capabilities.",
     context: "8,192 tokens",
     inputPricing: "N/A",
@@ -25,8 +25,8 @@ const staticModels: ModelInfo[] = [
     icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/screen.PNG-VV9pqhPHwQzkhNOxEzacb0LwWlSJjx.png",
   },
   {
-    provider: "GitHub Copilot",
-    model: "codex",
+    provider: "gpt-4-o-preview",
+    model: "gpt-4-o-preview",
     description: "Specialized model for code-related tasks.",
     context: "2,048 tokens",
     inputPricing: "N/A",
@@ -38,8 +38,21 @@ const staticModels: ModelInfo[] = [
 export default function ComparePage() {
   const [input, setInput] = useState("")
   const [chatStates, setChatStates] = useState<Record<string, ChatState>>(
-    Object.fromEntries(staticModels.map((model) => [model.model, { messages: [], isGenerating: false }])),
+    Object.fromEntries(
+      staticModels.map((model) => [
+        model.model,
+        { messages: [], isGenerating: false },
+      ]),
+    ),
   )
+
+  // New external API details:
+  const apiUrl = "https://api.individual.githubcopilot.com/chat/completions"
+  const headers = {
+    Authorization: "Bearer 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",
+    "Content-Type": "application/json",
+    "editor-version": "vscode/1.95.3",
+  }
 
   const handleSubmit = async () => {
     if (!input.trim()) return
@@ -67,31 +80,31 @@ export default function ComparePage() {
     // Clear input after sending
     setInput("")
 
-    // Simulate API calls for each model
+    // Call the external API for each model
     for (const model of staticModels) {
       try {
-        const response = await fetch("/api/chat", {
+        // Create a payload compatible with the external API
+        const payload = {
+          messages: [{ role: "user", content: userMessage.content }],
+          temperature: 0.7,
+          max_tokens: 200,
+          stream: false,
+        }
+
+        const response = await fetch(apiUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: model.model,
-            messages: [{ role: "user", content: input.trim() }],
-            temperature: 0.7,
-            max_tokens: 200,
-          }),
+          headers,
+          body: JSON.stringify({ ...payload, model: model.model }),
         })
 
         if (!response.ok) {
-          throw new Error("Failed to get response from model")
+          throw new Error("Failed to get response from external API")
         }
 
         const data = await response.json()
-
         const assistantMessage: Message = {
           role: "assistant",
-          content: data.choices[0].message.content,
+          content: data?.choices?.[0]?.message?.content || "No response",
           timestamp: Date.now(),
         }
 
@@ -133,4 +146,3 @@ export default function ComparePage() {
     </div>
   )
 }
-

@@ -18,13 +18,36 @@ const staticModels = [
   },
 ]
 
+// Handle preflight requests (important for CORS)
+export async function OPTIONS() {
+  return NextResponse.json(
+    {},
+    {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    },
+  )
+}
+
 export async function GET() {
-  return NextResponse.json({ data: staticModels })
+  return NextResponse.json(
+    { data: staticModels },
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      },
+    },
+  )
 }
 
 export async function POST(request: Request) {
   try {
-    const { model, messages, temperature, max_tokens } = await request.json()
+    const { model, messages } = await request.json()
 
     // Simulate API response
     await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000))
@@ -39,10 +62,14 @@ export async function POST(request: Request) {
       ],
     }
 
-    return NextResponse.json(simulatedResponse)
+    return NextResponse.json(simulatedResponse, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      },
+    })
   } catch (error) {
     console.error("Error simulating API call:", error)
     return NextResponse.json({ error: "Failed to get response from model" }, { status: 500 })
   }
 }
-
