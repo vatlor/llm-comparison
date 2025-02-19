@@ -49,9 +49,14 @@ export default function ComparePage() {
   // New external API details:
   const apiUrl = "https://api.individual.githubcopilot.com/chat/completions"
   const headers = {
-    Authorization: "Bearer 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",
+    "Authorization": "Bearer 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",
     "Content-Type": "application/json",
     "editor-version": "vscode/1.95.3",
+    "Origin": "https://api.individual.githubcopilot.com",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+
   }
 
   const handleSubmit = async () => {

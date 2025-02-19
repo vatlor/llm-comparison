@@ -1,75 +1,40 @@
 import { NextResponse } from "next/server"
 
-const staticModels = [
-  {
-    id: "gpt-3.5-turbo",
-    description: "A large language model optimized for dialogue.",
-    context_window: 4096,
-  },
-  {
-    id: "gpt-4",
-    description: "The latest GPT-4 model with improved capabilities.",
-    context_window: 8192,
-  },
-  {
-    id: "codex",
-    description: "Specialized model for code-related tasks.",
-    context_window: 2048,
-  },
-]
+const TARGET_URL = "https://api.individual.githubcopilot.com/chat/completions"
 
-// Handle preflight requests (important for CORS)
 export async function OPTIONS() {
-  return NextResponse.json(
-    {},
-    {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    },
-  )
-}
-
-export async function GET() {
-  return NextResponse.json(
-    { data: staticModels },
-    {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-      },
-    },
-  )
+  const headers = new Headers({
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  })
+  return new NextResponse(null, { headers })
 }
 
 export async function POST(request: Request) {
   try {
-    const { model, messages } = await request.json()
-
-    // Simulate API response
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000))
-
-    const simulatedResponse = {
-      choices: [
-        {
-          message: {
-            content: `This is a simulated response from ${model}: ${messages[0].content}`,
-          },
-        },
-      ],
-    }
-
-    return NextResponse.json(simulatedResponse, {
+    // Forward the incoming request to the external endpoint
+    const requestBody = await request.json()
+    const response = await fetch(TARGET_URL, {
+      method: "POST",
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Content-Type": "application/json",
+        Authorization: request.headers.get("Authorization") || "",
       },
+      body: JSON.stringify(requestBody),
     })
-  } catch (error) {
-    console.error("Error simulating API call:", error)
-    return NextResponse.json({ error: "Failed to get response from model" }, { status: 500 })
+
+    // Retrieve response from external server
+    const data = await response.text()
+
+    // Return the data from your own route with CORS headers
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    })
+
+    return new NextResponse(data, { status: response.status, headers })
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
   }
 }
